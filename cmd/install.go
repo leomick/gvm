@@ -2,8 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"leomick/gvm/downloader"
+	"log"
+	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // installCmd represents the install command
@@ -13,8 +17,28 @@ var installCmd = &cobra.Command{
 	Long: `Installs a specified go version. For example:
 "gvm install latest" installs the latest version
 "gvm install 1.23.2" installs go version 1.23.2`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("install called")
+		ver := args[0]
+		if ver == "latest" {
+			tbver, err := downloader.GetLatestVer()
+			if err != nil {
+				log.Fatal(err)
+			}
+			ver = tbver
+		}
+		_, err := os.Stat(viper.GetString("installDir") + ver)
+		switch {
+		case os.IsNotExist(err):
+			err = downloader.Download(ver)
+			if err != nil {
+				log.Fatal(err)
+			}
+		case err != nil:
+			log.Fatal(err)
+		default:
+			fmt.Println("That version is already installed")
+		}
 	},
 }
 
