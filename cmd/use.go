@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"errors"
+	"fmt"
 	"leomick/gvm/downloader"
 	"log"
 	"os"
@@ -33,7 +33,8 @@ Running "gvm use 1.23.2" then running "go version" would print "go version go1.2
 		_, err = os.Stat(viper.GetString("installDir") + ver)
 		if os.IsNotExist(err) {
 			if !install {
-				log.Fatal(errors.New("You are trying to use a go version that is not installed through gvm"))
+				fmt.Println("You are trying to use a go version that is not installed through gvm")
+				os.Exit(1)
 			}
 			err = downloader.Download(ver)
 			if err != nil {
