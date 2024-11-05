@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"leomick/gvm/downloader"
 	"log"
 	"os"
@@ -39,8 +38,11 @@ Running "gvm use 1.23.2" then running "go version" would print "go version go1.2
 			if !install {
 				log.Fatal(errors.New("You are trying to use a go version that is not installed through gvm"))
 			}
-			fmt.Println(ver)
-		} else {
+			err = downloader.Download(ver)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else if err != nil {
 			log.Fatal(err)
 		}
 	},
