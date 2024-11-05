@@ -13,9 +13,13 @@ func Init() error {
 	if err != nil {
 		return err
 	}
+	configdir, err := os.UserConfigDir()
+	if err != nil {
+		return err
+	}
 	viper.SetConfigName("gvm")
 	viper.SetConfigType("json")
-	viper.AddConfigPath("~/.config/gvm/")
+	viper.AddConfigPath(configdir + "/gvm/")
 	viper.SetDefault("installDir", homedir+"/.local/share/gvm/versions/")
 	err = viper.ReadInConfig()
 	return err
