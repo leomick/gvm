@@ -13,8 +13,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-var version string
-
 func Download(ver string) error {
 	url := fmt.Sprintf("https://go.dev/dl/go%v.linux-amd64.tar.gz", ver)
 	resp, err := http.Get(url)
@@ -25,7 +23,6 @@ func Download(ver string) error {
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("%v %v. The version number you specified is probably invalid", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
-	version = ver
 	err = extract.Gz(context.TODO(), resp.Body, viper.GetString("installDir"), renamer(ver))
 	if err != nil {
 		return err
