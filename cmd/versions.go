@@ -16,22 +16,11 @@ var versionsCmd = &cobra.Command{
 	Short: "Lists the go versions installed with gvm",
 	Long:  `Lists the go versions installed with gvm`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var versions []string
-		installDir := viper.GetString("installDir")
-		_, err := os.Stat(installDir)
-		if os.IsNotExist(err) {
-			fmt.Println("You have no versions installed")
-		}
-		contents, err := os.ReadDir(installDir)
+		versions, err := getVersions()
 		if err != nil {
 			log.Fatal(err)
 		}
-		for _, c := range contents {
-			if c.IsDir() {
-				versions = append(versions, c.Name())
-			}
-		}
-		if len(contents) == 0 {
+		if len(versions) == 0 {
 			fmt.Println("You have no versions installed")
 		} else {
 			list := strings.Join(versions, "\n")
@@ -40,6 +29,26 @@ var versionsCmd = &cobra.Command{
 	},
 }
 
+func getVersions() ([]string, error) {
+	var versions []string
+	installDir := viper.GetString("installDir")
+	_, err := os.Stat(installDir)
+	if os.IsNotExist(err) {
+		return []string{}, nil
+	} else if err != nil {
+		return []string{}, err
+	}
+	contents, err := os.ReadDir(installDir)
+	if err != nil {
+		return []string{}, err
+	}
+	for _, c := range contents {
+		if c.IsDir() {
+			versions = append(versions, c.Name())
+		}
+	}
+	return versions, nil
+}
 func init() {
 	rootCmd.AddCommand(versionsCmd)
 
