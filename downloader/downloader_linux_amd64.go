@@ -21,7 +21,10 @@ func Download(ver string) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%v %v. The version number you specified is probably invalid", resp.StatusCode, http.StatusText(resp.StatusCode))
+		if resp.StatusCode == 404 {
+			return fmt.Errorf("404 %v. The version number you specified is probably invalid", http.StatusText(resp.StatusCode))
+		}
+		return fmt.Errorf("%v %v", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 	err = extract.Gz(context.TODO(), resp.Body, viper.GetString("installDir"), renamer(ver))
 	if err != nil {
