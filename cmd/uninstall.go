@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"leomick/gvm/downloader"
+	"leomick/gvm/tools"
 	"log"
 	"os"
 
@@ -20,7 +20,7 @@ var uninstallCmd = &cobra.Command{
 		installDir := viper.GetString("installDir")
 		ver := args[0]
 		if ver == "latest" {
-			tbver, err := downloader.GetLatestVer()
+			tbver, err := tools.GetLatestVer()
 			if err != nil {
 				log.Fatal(err)
 			}

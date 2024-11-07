@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"leomick/gvm/tools"
 	"log"
 	"os"
 	"strings"
@@ -23,7 +24,11 @@ var versionsCmd = &cobra.Command{
 		if len(versions) == 0 {
 			fmt.Println("You have no versions installed")
 		} else {
-			list := strings.Join(versions, "\n")
+			sortedVersions, err := tools.SortVersions(versions)
+			if err != nil {
+				log.Fatal(err)
+			}
+			list := strings.Join(sortedVersions, "\n")
 			fmt.Printf("You have the following versions installed:\n%v\n", list)
 		}
 	},

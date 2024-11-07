@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"leomick/gvm/downloader"
+	"leomick/gvm/tools"
 	"log"
 	"os"
 
@@ -21,7 +21,7 @@ var installCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ver := args[0]
 		if ver == "latest" {
-			tbver, err := downloader.GetLatestVer()
+			tbver, err := tools.GetLatestVer()
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -30,7 +30,7 @@ var installCmd = &cobra.Command{
 		_, err := os.Stat(viper.GetString("installDir") + ver)
 		switch {
 		case os.IsNotExist(err):
-			err = downloader.Download(ver)
+			err = tools.Download(ver)
 			if err != nil {
 				log.Fatal(err)
 			}

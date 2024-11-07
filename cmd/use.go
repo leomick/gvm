@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"leomick/gvm/downloader"
+	"leomick/gvm/tools"
 	"log"
 	"os"
 	"strings"
@@ -36,8 +36,12 @@ func initialModel() useModel {
 	if err != nil {
 		log.Fatal(err)
 	}
+	sortedVersions, err := tools.SortVersions(versions)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return useModel{
-		versions:  versions,
+		versions:  sortedVersions,
 		cursor:    0,
 		searchBar: textInput,
 	}
@@ -49,7 +53,7 @@ func (m useModel) Init() tea.Cmd {
 		return tea.Quit
 	}
 	// Just return `nil`, which means "no I/O right now, please."
-	return nil
+	return tea.Println(m.versions)
 }
 
 func (m useModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -124,7 +128,7 @@ Running "gvm use 1.23.2" then running "go version" would print "go version go1.2
 		if len(args) == 1 {
 			ver := args[0]
 			if ver == "latest" {
-				tbver, err := downloader.GetLatestVer()
+				tbver, err := tools.GetLatestVer()
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -136,7 +140,7 @@ Running "gvm use 1.23.2" then running "go version" would print "go version go1.2
 					fmt.Println("You are trying to use a go version that is not installed through gvm")
 					os.Exit(1)
 				}
-				err = downloader.Download(ver)
+				err = tools.Download(ver)
 				if err != nil {
 					log.Fatal(err)
 				}
