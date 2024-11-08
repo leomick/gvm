@@ -7,6 +7,7 @@ require (
 	github.com/charmbracelet/bubbletea v1.2.0
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/codeclysm/extract/v4 v4.0.0
+	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 )

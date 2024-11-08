@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"leomick/gvm/tools"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // versionsCmd represents the versions command
@@ -17,43 +15,26 @@ var versionsCmd = &cobra.Command{
 	Short: "Lists the go versions installed with gvm",
 	Long:  `Lists the go versions installed with gvm`,
 	Run: func(cmd *cobra.Command, args []string) {
-		versions, err := getVersions()
+		versions, err := tools.GetVersions()
 		if err != nil {
 			log.Fatal(err)
 		}
 		if len(versions) == 0 {
 			fmt.Println("You have no versions installed")
 		} else {
-			sortedVersions, err := tools.SortVersions(versions)
+			var stringVersions []string
+			for _, v := range versions {
+				stringVersions = append(stringVersions, v.Original())
+			}
 			if err != nil {
 				log.Fatal(err)
 			}
-			list := strings.Join(sortedVersions, "\n")
+			list := strings.Join(stringVersions, "\n")
 			fmt.Printf("You have the following versions installed:\n%v\n", list)
 		}
 	},
 }
 
-func getVersions() ([]string, error) {
-	var versions []string
-	installDir := viper.GetString("installDir")
-	_, err := os.Stat(installDir)
-	if os.IsNotExist(err) {
-		return []string{}, nil
-	} else if err != nil {
-		return []string{}, err
-	}
-	contents, err := os.ReadDir(installDir)
-	if err != nil {
-		return []string{}, err
-	}
-	for _, c := range contents {
-		if c.IsDir() {
-			versions = append(versions, c.Name())
-		}
-	}
-	return versions, nil
-}
 func init() {
 	rootCmd.AddCommand(versionsCmd)
 

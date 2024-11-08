@@ -1,50 +1,35 @@
 package tools
 
 import (
-	"slices"
-	"strconv"
-	"strings"
+	"os"
+	"sort"
+
+	"github.com/Masterminds/semver/v3"
+	"github.com/spf13/viper"
 )
 
-func SortVersions(versions []string) ([]string, error) {
-	var intVersions [][]int
-	for _, v := range versions {
-		sliceStringVer := strings.Split(v, ".")
-		var intVersion []int
-		for _, v := range sliceStringVer {
-			val, err := strconv.Atoi(v)
+func GetVersions() ([]*semver.Version, error) {
+	var versions []*semver.Version
+	installDir := viper.GetString("installDir")
+	_, err := os.Stat(installDir)
+	if os.IsNotExist(err) {
+		return []*semver.Version{}, nil
+	} else if err != nil {
+		return []*semver.Version{}, err
+	}
+	contents, err := os.ReadDir(installDir)
+	if err != nil {
+		return []*semver.Version{}, err
+	}
+	for _, c := range contents {
+		if c.IsDir() {
+			version, err := semver.NewVersion(c.Name())
 			if err != nil {
-				return []string{}, err
+				return []*semver.Version{}, err
 			}
-			intVersion = append(intVersion, val)
+			versions = append(versions, version)
 		}
-		intVersions = append(intVersions, intVersion)
 	}
-	slices.SortFunc(intVersions, func(a, b []int) int {
-		var uselength int
-		if len(a) < len(b) {
-			uselength = len(a)
-		} else {
-			uselength = len(b)
-		}
-		for i := 0; i < uselength; i++ {
-			if a[i] > b[i] {
-				return -1
-			}
-			if a[i] < b[i] {
-				return 1
-			}
-		}
-		return 0
-	})
-	var sorted []string
-	for _, v := range intVersions {
-		var stringVersion []string
-		for _, versionsection := range v {
-			stringVersion = append(stringVersion, strconv.Itoa(versionsection))
-		}
-		versionString := strings.Join(stringVersion, ".")
-		sorted = append(sorted, versionString)
-	}
-	return sorted, nil
+	sort.Sort(sort.Reverse(semver.Collection(versions))) // Use sort.Reverse to turn the ascending sort interface into a descending one.
+	return versions, nil
 }

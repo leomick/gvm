@@ -32,16 +32,16 @@ func initialModel() useModel {
 	textInput.Placeholder = "Search for a version"
 	textInput.CharLimit = 10
 	textInput.Width = 20
-	versions, err := getVersions()
+	versions, err := tools.GetVersions()
 	if err != nil {
 		log.Fatal(err)
 	}
-	sortedVersions, err := tools.SortVersions(versions)
-	if err != nil {
-		log.Fatal(err)
+	var stringVersions []string
+	for _, v := range versions {
+		stringVersions = append(stringVersions, v.Original())
 	}
 	return useModel{
-		versions:  sortedVersions,
+		versions:  stringVersions,
 		cursor:    0,
 		searchBar: textInput,
 	}
@@ -53,7 +53,7 @@ func (m useModel) Init() tea.Cmd {
 		return tea.Quit
 	}
 	// Just return `nil`, which means "no I/O right now, please."
-	return tea.Println(m.versions)
+	return nil
 }
 
 func (m useModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
