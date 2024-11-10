@@ -1,25 +1,30 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"leomick/gvm/components/downloader"
 	"leomick/gvm/tools"
 	"log"
 	"os"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/codeclysm/extract/v4"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 type installModel struct {
 	downloader downloader.Model
+	version    string
 }
 
 func installInitialModel(version string) installModel {
 	downloader := downloader.New(version)
 	return installModel{
 		downloader: downloader,
+		version:    version,
 	}
 }
 
@@ -30,8 +35,20 @@ func (m installModel) Init() tea.Cmd {
 
 func (m installModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+	var cmds []tea.Cmd
+	switch msg.(type) {
+	case downloader.DoneMsg:
+		err := extract.Gz(context.Background(), m.downloader.Pw.Resp.Body, viper.GetString("installDir"), Renamer(m.version))
+		if err != nil {
+			log.Fatal(err)
+		}
+		m.downloader.Pw.Resp.Body.Close()
+		cmd = tea.Quit
+		cmds = append(cmds, cmd)
+	}
 	m.downloader, cmd = m.downloader.Update(msg)
-	return m, cmd
+	cmds = append(cmds, cmd)
+	return m, tea.Batch(cmds...)
 }
 
 func (m installModel) View() string {
@@ -83,4 +100,10 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// installCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func Renamer(ver string) extract.Renamer {
+	return func(name string) string {
+		return strings.Replace(name, "go", ver, 1)
+	}
 }
