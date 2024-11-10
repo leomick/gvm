@@ -1,16 +1,19 @@
 package cmd
 
 import (
-	"context"
+	"bytes"
 	"fmt"
+	"io"
 	"leomick/gvm/components/downloader"
 	"leomick/gvm/tools"
+	"leomick/gvm/tools/targz"
 	"log"
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/codeclysm/extract/v4"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -18,19 +21,34 @@ import (
 type installModel struct {
 	downloader downloader.Model
 	version    string
+	extracting bool
+	extracted  bool
+	spinner    spinner.Model
 }
 
+type extractedMsg bool
+
+var checkmark string = lipgloss.NewStyle().
+	Foreground(lipgloss.ANSIColor(10)).
+	SetString("✓").String()
+
 func installInitialModel(version string) installModel {
-	downloader := downloader.New(version)
+	spin := spinner.New()
+	spin.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("123"))
+	spin.Spinner = spinner.MiniDot
+	downloader := downloader.New(tools.GetUrl(version))
 	return installModel{
 		downloader: downloader,
 		version:    version,
+		extracting: false,
+		extracted:  false,
+		spinner:    spin,
 	}
 }
 
 func (m installModel) Init() tea.Cmd {
 	// Just return `nil`, which means "no I/O right now, please."
-	return m.downloader.Start()
+	return tea.Batch(m.downloader.Start(), m.spinner.Tick)
 }
 
 func (m installModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -38,21 +56,42 @@ func (m installModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg.(type) {
 	case downloader.DoneMsg:
-		err := extract.Gz(context.Background(), m.downloader.Pw.Resp.Body, viper.GetString("installDir"), Renamer(m.version))
-		if err != nil {
-			log.Fatal(err)
-		}
-		m.downloader.Pw.Resp.Body.Close()
-		cmd = tea.Quit
-		cmds = append(cmds, cmd)
+		defer m.downloader.Pw.Resp.Body.Close()
+		reader := bytes.NewReader(m.downloader.Pw.Content)
+		m.extracting = true
+		cmds = append(cmds, extract(m.version, reader))
+	case extractedMsg:
+		m.extracting = false
+		m.extracted = true
+		cmds = append(cmds, tea.Quit)
 	}
 	m.downloader, cmd = m.downloader.Update(msg)
+	cmds = append(cmds, cmd)
+	m.spinner, cmd = m.spinner.Update(msg)
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
 }
 
 func (m installModel) View() string {
-	return m.downloader.View()
+	var s string
+	if m.extracting {
+		s = fmt.Sprintf("%v Extracting...", m.spinner.View())
+	} else if m.extracted {
+		s = fmt.Sprintf("%v Successfully extracted!\n", checkmark)
+	} else {
+		s = m.downloader.View()
+	}
+	return s
+}
+
+func extract(version string, reader io.Reader) tea.Cmd {
+	return func() tea.Msg {
+		err := targz.ExtractTarGZ(reader, viper.GetString("installDir"), Renamer(version))
+		if err != nil {
+			log.Fatal(err)
+		}
+		return extractedMsg(true)
+	}
 }
 
 // installCmd represents the install command
@@ -102,7 +141,7 @@ func init() {
 	// installCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func Renamer(ver string) extract.Renamer {
+func Renamer(ver string) func(string) string {
 	return func(name string) string {
 		return strings.Replace(name, "go", ver, 1)
 	}

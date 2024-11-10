@@ -14,6 +14,7 @@ type progressWriter struct {
 	total      int
 	downloaded int
 	Resp       *http.Response
+	Content    []byte
 }
 
 type DoneMsg bool
@@ -31,6 +32,7 @@ func (pw *progressWriter) Start() {
 
 func (pw *progressWriter) Write(p []byte) (int, error) {
 	pw.downloaded += len(p)
+	pw.Content = append(pw.Content, p...)
 	if pw.total > 0 {
 		pw.onProgress(float64(pw.downloaded) / float64(pw.total))
 	}
@@ -58,14 +60,14 @@ type Model struct {
 	bar      progress.Model
 	Pw       *progressWriter
 	url      string
-	version  string
 	progress float64
 }
 
-func New(version string) Model {
+func New(url string) Model {
 	ProgressChannel = make(chan float64)
-	url := fmt.Sprintf("https://go.dev/dl/go%v.linux-amd64.tar.gz", version)
 	bar := progress.New()
+	bar.FullColor = "123"
+	bar.EmptyColor = "8"
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Fatal(err)
@@ -81,10 +83,9 @@ func New(version string) Model {
 		Resp:  resp,
 	}
 	return Model{
-		bar:     bar,
-		Pw:      pw,
-		url:     url,
-		version: version,
+		bar: bar,
+		Pw:  pw,
+		url: url,
 	}
 }
 

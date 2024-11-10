@@ -1,20 +1,17 @@
-//go:build linux && amd64
-
 package tools
 
 import (
-	"context"
 	"fmt"
 	"io"
+	"leomick/gvm/tools/targz"
 	"net/http"
 	"strings"
 
-	"github.com/codeclysm/extract/v4"
 	"github.com/spf13/viper"
 )
 
 func Download(ver string) error {
-	url := fmt.Sprintf("https://go.dev/dl/go%v.linux-amd64.tar.gz", ver)
+	url := GetUrl(ver)
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -26,7 +23,7 @@ func Download(ver string) error {
 		}
 		return fmt.Errorf("%v %v", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
-	err = extract.Gz(context.TODO(), resp.Body, viper.GetString("installDir"), renamer(ver))
+	err = targz.ExtractTarGZ(resp.Body, viper.GetString("installDir"), renamer(ver))
 	if err != nil {
 		return err
 	}
@@ -51,7 +48,7 @@ func GetLatestVer() (string, error) {
 	return versionnum, nil
 }
 
-func renamer(ver string) extract.Renamer {
+func renamer(ver string) func(string) string {
 	return func(name string) string {
 		return strings.Replace(name, "go", ver, 1)
 	}
