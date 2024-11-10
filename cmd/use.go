@@ -26,7 +26,7 @@ type useModel struct {
 	searchBar        textinput.Model
 }
 
-func initialModel() useModel {
+func useInitialModel() useModel {
 	textInput := textinput.New()
 	textInput.Prompt = ""
 	textInput.Placeholder = "Search for a version"
@@ -151,7 +151,7 @@ Running "gvm use 1.23.2" then running "go version" would print "go version go1.2
 			fmt.Println("You need to specify a version when using the install flag")
 			os.Exit(1)
 		} else {
-			p := tea.NewProgram(initialModel())
+			p := tea.NewProgram(useInitialModel())
 			if _, err := p.Run(); err != nil {
 				fmt.Printf("Alas, there's been an error: %v", err)
 				os.Exit(1)
